@@ -1,0 +1,8 @@
+系统信息获取 (sys.platform)
+进程与线程的概念
+GNU/Linux系统编程模块的使用 (os, sys, subprocess, multiprocessing, time, datetime, queue)
+multiprocessing多进程模块
+执行其他程序 (os.system, subprocess, multiprocessing)
+multiprocessing模块的进程间通讯 (Lock)
+全局解释器锁 (GIL)
+threading线程模块的使用

@@ -1,0 +1,2 @@
+n = 'qwdq'
+print(n + '%')

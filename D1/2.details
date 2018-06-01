@@ -1,0 +1,40 @@
+系统信息获取 (sys.platform)
+
+进程与线程的概念
+
+
+GNU/Linux系统编程模块的使用
+
+    os
+    sys
+    subprocess
+    multiprocessing
+    time
+    datetime
+
+
+默认情况下,每一个进程都有三个打开的文件,它们是:标准输入(stdin), 标准输出(stdout), 标准错误(stderr). 默认情况下,标准输入与键盘相关联,标准输出和标准错误与屏幕相关联. python程序运行时,所打开的这三个文件,究竟是以二进制的形式打开,还是以字符串的形式打开,是不确定的,如果需要确定,可以使用类似这样的语句 os.fdopen(sys.stdin.fileno(), 'rb') 来重新打开.
+
+文件操作中,有这样的特点:
+
+1. 如果文件是以二进制的形式打开 (open(filename, 'rb')), 写的时候要求数据是字节串,读的时候所返回的数据也是字节串
+2. 如果文件是以字符串的形式打开 (open(filename, 'r')), 写的时候要求数据是字符串,读的时候所返回的数据也是字符串
+
+字节串与字符串的区别和联系(当涉及到中文时就能够明显地看出区别):
+
+1. 字节串里每一个元素都是字节 
+2. 字符串里每一个元素都是字符
+
+
+执行其他程序 (os.system, subprocess)
+multiprocessing多进程模块
+multiprocessing模块的进程间通讯 (Lock)
+
+
+全局解释器锁 (GIL, global interpreter lock)
+
+python进程就是解释器,所以说这个所谓的解释器锁是存在于python进程里面的. GIL 使得某一时刻只有一份字节码在运行.
+
+
+
+threading线程模块的使用

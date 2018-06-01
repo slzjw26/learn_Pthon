@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="26">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"无描述"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>2D75AB68</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>3</ID>
+      <Description Activated="1">"无描述"</Description>
+      <VariableType>Float</VariableType>
+      <Address>2D777A78</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

@@ -1,0 +1,74 @@
+1. 通过os模块在硬盘上创建目录,删除目录,给文件改名,列目录,改变目录,运行外部命令
+
+	os.mkdir
+	os.rmdir
+	os.rename
+	os.listdir
+	os.chdir
+	os.system
+
+	1. 进入当前用户的主目录
+
+		os.chdir('C:/users/Administrator')
+
+	2. 列出主目录下所有的文件
+
+		file_list = os.listidr()
+
+	3. 列出主目录下所有的文件
+
+		os.mkdir('video')
+
+	4. 把video目录改名为movie
+
+		os.rename('video', 'movie')
+
+	5. 删除movie目录
+
+		os.rmdir('movie')
+
+	6. 打开notepad编辑器
+
+		os.system('notepad')
+
+	7. 创建一个文本文件,往文件中填充若干行数据,然后用notepad打开浏览/编辑
+
+		f = open('notes.txt', 'w')
+		for i in range(10):
+			f.write('Python is good, #%s\n' % i)
+		f.close()
+		os.system('notepad notes.txt')
+
+
+2. 通过 multiprocessing 使用多进程
+
+创建2个进程, 每一个进程都打出当前的时间和进程的标识,持续打十次.
+
+范例程序:
+
+import multiprocessing as mul
+from datetime import datetime
+import time
+
+
+def worker(id):
+    for i in range(10):
+        now = datetime.now()
+        print('proc #%s %s' % (id, now), flush=True)
+
+
+if __name__ == '__main__':
+    procs = []
+
+    # 创建进程,并把进程对象保存起来
+    for i in range(2):
+        p = mul.Process(target=worker, args=(i,))
+        p.start()
+        procs.append(p)
+    
+    # 用join方法等待进程结束
+    for p in procs:
+        p.join()
+
+
+time.sleep(3)
