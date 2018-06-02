@@ -15,7 +15,7 @@
 
 		file_list = os.listidr()
 
-	3. 列出主目录下所有的文件
+	3. 创建一个名为video的目录
 
 		os.mkdir('video')
 
@@ -72,3 +72,55 @@ if __name__ == '__main__':
 
 
 time.sleep(3)
+
+
+
+3. 写一个程序,显示当前时间的这些信息:年,月,日,工作日,时,分,秒
+   可以通过查询模块time的strftime 的帮助文档来获知相应的占位符.
+
+	from datetime import datetime
+	now = datetime.now()
+	text = now.strftime('%a, %Y-%m-%d %H:%M:%S')
+	print(text)
+
+
+4. 写一个程序，把第一个命令行参数(是一个ISO标准的日期时间字符串)解析成时间对象,
+   然后以 '%a, %Y-%m-%d %H:%M:%S' 的格式输出到标准输出.
+
+import sys
+import time
+from datetime import datetime
+
+# 命令行参数必须等于1个
+if len(sys.argv) != 2:
+    print('usage: time_parse.py <date time string>')
+    exit(1)
+
+time_str = sys.argv[1]
+time_fmt = '%Y-%m-%d %H:%M:%S'
+
+# 用户输入的时间字符串很可能是不符合规范的,如果遇到这样的不规范时间字符串,
+# time.strptime 函数将会抛出ValueErro 异常
+try:
+    t = time.strptime(time_str, time_fmt)
+except ValueError:
+    print('invalid time string: %s' % time_str)
+    exit(1)
+
+# t是一个时间结构体,其前面6个字段就是年/月/日/时/分/秒
+t2 = t[:6]
+
+# 通过 *t2 这样的传参方式把t2里面的6个元素打散,按顺序传递给datetime类的构造函数
+dt = datetime(*t2)
+
+# 格式化并输出结果
+result = dt.strftime('%a, %Y-%m-%d %H:%M:%S')
+print(result)
+
+
+5. 在练习4的基础上,给程序增加一个功能
+   接收第二个参数,这第二个参数表示日期的增量,程序首先解析出第一个参数所表示的具体时间,
+   然后计算出与第二个参数所表示的天数 (days) 的和,最后用格式 '%a, %Y-%m-%d %H:%M:%S 输出和.
+
+	delta = timedelta(days=3)
+	dt + delta

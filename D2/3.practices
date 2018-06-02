@@ -1,0 +1,26 @@
+1. 操练requests
+这个模块需要安装：pip install requests
+
+    import requests
+    import os
+    url = 'http://www.gnu.org/'
+    r = requests.get(url)
+    if r.ok:
+        open('gnu.html', 'w').write(r.text)
+    #os.system('firefox gnu.html')
+
+
+2. 按以下要求写一个程序
+	1. 用socket实现UDP通讯
+	2. 客户端不停地向服务端发送信息
+	3. 服务端不停地接收信息，并把每一次收到的信息的长度打印到标准输出
+
+
+3. 按以下要求写程序
+	1. frontend.py 程序交互式地从用户获取一行数据，然后发送给本机TCP3001端口的服务器
+	2. backend.py 程序监听 ('127.0.0.1', 3001), 从客户端读取数据，然后把数据追加到文件message中
+
+
+4. 按以下要求写程序
+	1. echo_server.py 程序同时响应多个客户端的请求，接收客户端的数据，在数据前面加上 "received: "，然后返回给客户端
+	2. echo_client.py 程序持续地给服务端发送当前时间，每发一次就睡眠1秒钟

@@ -1,0 +1,63 @@
+OSI model, TCP/IP
+
+OSI: Open System Interconnection reference model
+
+    Application
+    Presentation
+    Session
+    Transport
+    Network
+    Data link
+    Physical
+
+Internet: Yin Te Wang (Hu Lian Wang)
+internet: Hu Lian Wang Luo
+
+
+    Application (http, ftp, smtp, pop, imap, dns, dhcp)
+    Transport (UDP, TCP)
+    Internet (IP)
+    Physical
+
+
+socket服务端通信的基本流程
+
+1. 导入模块
+import socket
+
+2.  创建socket对象，AF_INET就是IPv4协议，SOCK_STREAM就是TCP协议
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+3. 绑定需要监听的IP和端口 
+addr = ('127.0.0.1', 8001)
+s.bind(addr)
+
+4. 开始监听，这条命令运行完毕之后，就可以用ss/netstat命令看到所监听的ip和端口
+s.listen(5)
+
+5. 接受客户端的连接
+   注意：服务端运行这条命令后，将会阻塞，直到客户端成功连接，所以做到这一步后，就可以接着做客户端的步骤了
+csock, caddr = s.accept()
+
+6. 接收和发送数据
+csock.recv(4096)
+csock.send(b'I can see you.')
+
+
+
+socket客户端通信的基本流程
+
+1. 导入模块
+import socket
+
+2.  创建socket对象，AF_INET就是IPv4协议，SOCK_STREAM就是TCP协议
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+3. 连接服务器地址
+addr = ('127.0.0.1', 8001)
+s.connect(addr)
+
+4. 接收和发送数据
+s.recv(4096)
+s.send(b'I can see you.')
+

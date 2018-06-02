@@ -1,0 +1,5 @@
+OSI model, TCP/IP
+requests
+socket模块的基本使用
+用socket模块做TCP或UDP型的通讯
+实现服务器并发处理请求

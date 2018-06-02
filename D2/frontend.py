@@ -1,18 +1,18 @@
 import socket
 
 
-def sent():
+def run():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(addr)
     while True:
-        line = input('>>> ')
-        if not line:
+        msg = input('>>> ')
+        if not msg:
             break
-        sock.send(line.encode() + b'\n')
+        sock.send(msg.encode()+b'\n')
 
 
 addr = ('127.0.0.1', 3001)
 
 
 if __name__ == '__main__':
-    sent()
+    run()
