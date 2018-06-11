@@ -1,0 +1,46 @@
+配置CentOS 6.9的yum源
+
+1. 切换成root身份
+    su -
+
+2. 清除原有配置
+
+    cd /etc/yum.repos.d
+    mkdir backup
+    mv *.repo backup/
+
+3. 创建配置文件 /etc/yum.repos.d/dvd.repo，在文件中填充以下内容：
+
+    [dvd]
+    name=dvd
+    baseurl=file:///yum
+    enabled=1
+    gpgcheck=0
+
+4. 创建挂载点，把CentOS的iso文件添加到虚拟机上，永久挂载iso
+
+    # 创建挂载点
+    mkdir /yum
+
+    # 把CentOS的iso文件添加到虚拟机上
+    根据所使用的虚拟机软件，把iso文件添加到虚拟机，这个iso文件
+    就是虚拟机的光盘，在虚拟机里面对应着 /dev/sr0 文件。
+
+    # 设置开机自动挂载
+    echo "/dev/sr0 /yum iso9660 defaults,loop 0 0" >> /etc/fstab
+
+    # 挂载
+    mount /yum
+
+    # 检查是否挂在成功，下面的命令应能看到类似以下的输出
+    df -h /yum
+    Filesystem      Size  Used Avail Use% Mounted on
+    /dev/sr0        3.7G  3.7G     0 100% /yum
+
+5. 检验yum配置，运行以下命令，应能看到repolist: 6,706 这样的输出
+
+    yum repolist
+
+    ...
+    ...
+    repolist: 6,706

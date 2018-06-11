@@ -1,0 +1,8 @@
+#!/bin/bash
+# 显示本机的CPU 使用状况
+
+echo "Content-Type: text/plain"
+echo
+
+header="1min 5min 15min"
+uptime | awk -F '[, ]+' -v header="$header" '{print header; print $(NF-2), $(NF-1), $NF}' | column -t

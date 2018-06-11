@@ -1,0 +1,9 @@
+#!/bin/bash
+# 显示本机的文件系统使用状况
+
+echo "Content-Type: text/plain"
+echo
+
+text=$(df | tail -n +2)
+header="Device 1K-blocks Used Available Use% Directory"
+(echo "$header"; echo "$text") | column -t

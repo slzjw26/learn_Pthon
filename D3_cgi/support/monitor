@@ -1,0 +1,46 @@
+#!/bin/bash
+# 显示本机的CPU/RAM/HD使用状况
+
+echo "Content-Type: text/plain"
+echo
+
+# 显示本机的CPU 使用状况
+cpu() {
+    header="1min 5min 15min"
+    uptime | awk -F '[, ]+' -v header="$header" '{print header; print $(NF-2), $(NF-1), $NF}' | column -t
+}
+
+# 显示本机的RAM 使用状况
+ram() {
+    text=$(free)
+    read total used free shared buffers cached <<< $(awk 'NR==2{print $2,$3,$4,$5,$6,$7}' <<<"$text")
+    read used_real free_real <<< $(awk 'NR==3{print $(NF-1),$NF}' <<<"$text")
+    header="total used used(real) free free(real) shared buffers cached"
+    (echo "$header"; echo $total $used $used_real $free $free_real $shared $buffers $cached) | column -t
+}
+
+# 显示本机的文件系统使用状况
+hd() {
+    text=$(df | tail -n +2)
+    header="Device 1K-blocks Used Available Use% Directory"
+    (echo "$header"; echo "$text") | column -t
+}
+
+case "$QUERY_STRING" in
+    *cpu)
+        cpu;;
+    *ram)
+        ram;;
+    *hd)
+        hd;;
+    *)
+        echo '===> CPU'
+        cpu
+        echo
+        echo '===> RAM'
+        ram
+        echo
+        echo '===> HD'
+        hd
+        ;;
+esac

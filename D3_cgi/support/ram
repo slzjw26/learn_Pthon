@@ -1,0 +1,12 @@
+#!/bin/bash
+# 显示本机的RAM 使用状况
+
+echo "Content-Type: text/plain"
+echo
+
+text=$(free)
+read total used free shared buffers cached <<< $(awk 'NR==2{print $2,$3,$4,$5,$6,$7}' <<<"$text")
+read used_real free_real <<< $(awk 'NR==3{print $(NF-1),$NF}' <<<"$text")
+
+header="total used used(real) free free(real) shared buffers cached"
+(echo "$header"; echo $total $used $used_real $free $free_real $shared $buffers $cached) | column -t

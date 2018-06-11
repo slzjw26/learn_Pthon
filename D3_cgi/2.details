@@ -1,0 +1,227 @@
+HTTP协议/HTML标记语言/WWW
+
+HTTP: Hyper-text Tranfer Protocol, 网页浏览
+HTML: Hper-text Markup Language, 写网页
+WWW: world wide web，万维网
+
+
+
+常规网页通讯流程:
+
+运行浏览器 (应用程序, user-agent)
+输入网址
+域名解析服务器解析域名返回IP地址（互联网中的节点通过IP地址来表示身份）
+浏览器访问对应IP地址的服务器
+服务器运行Web服务程序根据URL查找对应路径的文件，返回文件内容, 或者运行/解析文件然后将解析结果返回
+浏览器接收服务器返回的内容，并做解析与展示
+
+
+
+Web服务器
+
+Python自带HTTP服务
+Apache(HTTP服务器)
+    LAMP = Linux + Apache + MySQL + PHP/Python/Perl
+Nginx
+    LNMP = Linux + Nginx + MySQL/Mongodb + PHP/Python/Perl
+IIS
+Tomcat  + Java
+
+
+URI和URL
+
+URI     统一资源标识符(uniformed resource identifier)
+URL     统一资源定位符(uniformed resource location)，是URI的子集, 更为具体的URI
+
+URL格式
+
+http://user:passwd@www.baidu.com:80/dir/index.html?uid=1&name=Python#OOP
+    协议头：http://
+    登录信息(认证): user:passwd
+    服务器地址: www.baidu.com
+    服务端端口: 80
+    文件路径: /dir/index.html
+    查询字符串Query String(文件的参数):  uid=1&name=Python
+    片段标识符: #OOP
+
+支持各种协议的表示法
+    http://
+    https://
+    ftp://
+    file://
+    ssh://
+
+Python操作URL模块
+
+    urllib.parse.urlencode  <-- 对字典做编码操作
+    urllib.parse.quote      <-- 对文本做编码操作
+    urllib.parse.unquote    <-- 对文本做解码操作
+
+
+HTTP协议
+
+HTTP协议用于浏览器和服务器之间传输超文本数据，这些数据最常见的就是html文档。
+HTTP协议是无状态协议, 多次请求之间并没有什么关系。
+
+http://mp3.baidu.com/login.php
+http://mp3.baidu.com/aa.mp3
+http://mp3.baidu.com/bb.mp3
+
+
+HTTP请求
+
+请求行 
+    method URL version
+
+    常见的方法(method):
+        GET         获取资源
+        POST        提交新的数据
+        PUT         存储一个资源
+        DELETE      删除一个资源
+        HEAD        获取响应消息头
+
+消息报头
+    常见报头
+        Accept
+        Accept-Encoding
+        Accept-Language
+        Connection
+        Cookie
+        Host
+        Referer
+        User-Agent
+
+请求正文
+    发送给服务器的实际数据, 一般用于POST和PUT方法中
+
+
+HTTP响应
+
+状态行
+    version code reason
+    响应代码分类
+        1xx     提示信息, 请求接受, 继续处理
+        2xx     请求被成功接受并且处理
+        3xx     重定向
+        4xx     客户端错误
+        5xx     服务器错误
+
+
+消息报头
+    常见报头
+        Accept-Ranges
+        Connection
+        Content-Encoding
+        Content-Length
+        Content-Type
+        Expires 
+        Keep-Alive
+
+响应正文
+
+
+
+
+CGI (通用网关接口)
+
+CGI 是Web服务器和Web应用程序之间的通信规范，协议规定Web服务器将请求信息以环境变量的形式传入Web应用程序，应用程序把响应数据写到标准输出，响应数据前面是头部信息，后面是正文，中间以空行作为分隔。
+
+
+在Ubuntu中配置Apache开启CGI功能: /etc/apache2/sites-available/000-default.conf
+
+    <Directory /kyo>
+        Options +ExecCGI            # 开启CGI功能
+        DirectoryIndex index.py     # 设置目录默认执行文件
+    </Directory>
+    AddHandler cgi-script .py       # 设置使用cgi的文件的后缀名
+
+开启Apache执行其它程序的权限: sudo a2enmod mpm_prefork cgi
+
+配置Apache执行用户: /etc/apache2/envvars
+
+    export APACHE_RUN_USER=username
+    export APACHE_RUN_GROUP=groupname
+
+重启Apache服务器
+
+
+
+
+
+Cookie
+
+Cookie可用与在多次http请求之间保存状态信息，常用于记录登录信息。Cookie的设置放在头信息中，包含几个字段：
+
+1. expires
+过期时间，不指定的话就是session cookie，关闭浏览器后消失，此值的格式有严格要求，这个规范是可以接受的格式：Tue, 03 Jan 2018 23:37:28 +0800 ，这种格式也叫 rfc2822 格式。用命令 date -R 可以生成这种格式的输出。
+
+在python中生成rfs2822格式的时间字符串
+
+    import pytz
+    from datetime import datetime
+    now = datetime.now()
+    tz = pytz.timezone('Asia/Chongqing')
+    now = tz.localize(now)
+    now.strftime('%a, %d %b %Y %H:%M:%S %z')
+
+python里面做时间的加减操作
+
+    from datetime import timedelta
+    now + timedelta(days=1)
+
+测试提示：
+
+    1. 测试cookie的过期时间时，建议不使用chromium-browser，可以考虑使用firefox.
+    2. 如果cookie的时间设置得过短（比如说5秒），可能这个cookie会被firefox当成马上过期。
+
+
+2. domain
+浏览器根据这个值来判断是否需要向某个网站发送cookie，这个内容可以是域名的一部分，但必须包含至少两个点。如果此值设置为 .gnu.org，则浏览器在访问 www.gnu.org, ftp.gnu.org 时都会发送此cookie。如果不指定，则仅发送给生成此cookie的网站。
+
+3. path
+浏览器根据这个值来判断是否需要在某个请求中带上cookie值，浏览器会把URL的文件路径部分与此值做比较，如果URL的文件路径等于path的值或者文件其中一个父目录路径等于path的值，浏览器就会发送此cookie，否则就不发送。如果不指定，此值默认为一个斜杠，代表总是向匹配的域发送cookie。
+
+4. secure
+如果提供了这个标记（不需要指定值），则浏览器仅在访问加密网页(https)时发送此cookie。
+
+5. httponly
+如果提供了这个标记（不需要指定值），则浏览器中运行的javascript代码无法获取此cookie。
+
+范例:
+
+echo "Set-Cookie: expires=$(date -R); domain=.gnu.org; path=/cgi-bin; httponly; secure;"
+
+
+
+
+关于客户端给服务器发送cookie：
+
+    1. 是否发？完全由客户端决定
+    2. 发什么？完全由客户端决定
+    3. 服务器给客户端发送的cookie的属性的，只是客户端做决定时的参考数据，
+       客户端可以完全忽略这些属性，随意发送cookie。
+
+
+
+
+HTTP的无状态性/浏览器cookie/会话
+
+网页服务器通常来说是“无状态的”，也就是说请求和请求之间的独立的，服务器无法知道两个请求是不是来自同一个浏览器或者用户。网页服务器程序不在内存中保存请求与请求之间的信息（硬盘中的数据才能从一个请求传给另一个请求）。无状态性有时不太方便，因为有时需要把来自同一个用户的多个请求联系起来。
+
+当浏览器首次访问一个网站时，还不存在cookie；当服务器响应客户端时，它在头信息中包含Set-Cookie 信息，这个头信息定义了一个cookie。一个cookie本质上只是一个键值对，外加一些限定条件，比如说适用域，适用的路径，过期时间等。后续浏览器再访问网站时（一般是之前的那个服务器，但也不一定），如果条件匹配，浏览器将会在请求的头部信息中加上一个Cookie字段，把cookie发给服务器，服务器就可以用这个cookie来将多个请求联系起来。
+
+服务器使用cookie来实现session（会话），所谓的会话就是与一个活动连接相关的一组数据，这些数据存放在服务器上，可以存放在文件中，也可以存放在数据库中。一般情况下，会话的标识 (session id) 存放在cookie中。只要会话还存在，后续所有的相关请求都能够使用会话中的数据。当服务器收到客户端的请求时，服务器会检查存放session id 的cookie是否存在，如果存在，就用它来查找session，如果不存在，就创建新的会话，当请求结束后，服务器会保存session的数据以供后续使用。
+
+
+
+测试CGI程序时，如何排查Internal Server Error错误？
+
+出现这样的问题，表示这是服务端的错误，通常是CGI程序本身出错了，常见原因有：
+
+1. 程序没有执行权限
+2. 程序内部有错误，比如说python语法错误
+3. 首行的解释器路径有误
+
+参考排错方法：查看web服务器的错误日志
+
+Apache的错误日志位置是 /var/log/httpd/error_log，打开此文件后，取到文件的末尾，应能看到相应的错误信息，然后就可以根据错误信息查错。

@@ -1,0 +1,17 @@
+关闭防火墙：
+
+    iptables -F
+    iptables -t nat -F
+    service iptables save
+
+
+关闭SELinux
+
+    1. 修改配置文件
+    sed -i -r '/^SELINUX=.*/s/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+
+    2. 重启系统
+    reboot
+
+    3. 校验，以下命令应能看到 Disabled 字样
+    getenforce

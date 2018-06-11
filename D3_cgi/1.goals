@@ -1,0 +1,15 @@
+# HTTP协议/HTML标记语言/WWW
+# 网页通讯的流程
+# 常见的web服务器 (apache, nginx, iis, tomcat, python wsgi, uwsgi)
+# url的书写规范(协议头，登录信息，服务器地址，服务端端口，文件路径，查询字符串，片段标识符)
+# HTTP协议的基本规范
+
+# 用cgi来开发web程序
+    # cgi程序的基本结构
+    # 在cgi程序中调用系统命令
+    # 在cgi程序中使用QUERY_STRING
+    # 在cgi程序中使用Content-Type头 (text/plain, text/html)
+    # 在cgi程序中处理POST请求
+
+# cgi程序中使用cookie
+# cgi程序中使用session

@@ -1,0 +1,214 @@
+linux基础
+a.linux的网络设置
+	a1.命令设置
+	a2.临时设置
+	a3.配置文件设置
+	命令设置：
+	1>搜索一个IP(ping)(win)
+		IP限制：(192.168.7.2-254)
+		win+r--cmd--ping 192.168.7.88
+		linux设置的IP 192.168.7.88
+	2>查看linux中的ip地址
+		补充：eth0是linux第一块网卡名字
+		ifconfig
+		ifconfig eth0
+	3>设置IP
+		setup--网络设置--edit devices--eth0--名称、设备不动，取消dhcp，设置IP、子网掩码--ok--save--save&quit--退出
+	4>重启网络服务
+		service network restart
+	临时设置：
+		重启网络后失效
+		ifconfig eth0 192.168.7.144
+b.虚拟机的网络设置
+	桥接模式 
+		桥接后客户机可以和局域网中其他主机进行通信
+	仅主机模式
+		客户机和宿主机之间的私有通道，无法和局域网中其他主机进行通信
+	网络地址转换模式
+		客户机共享宿主机IP进行上网，无法和局域网中其他主机进行通信
+	虚拟机网络设置：
+		标签--设置--网络适配器--桥接、复制物理网络连接--确定
+c.测试网络
+	win:
+		win+r--cmd--ping linux的ip
+	linux：
+		终端--ping win的ip
+d.linux中的文件操作
+	d1.创建
+		1>touch(创建空文件)
+			 touch config
+			 	当前目录下创建config文件
+			 touch net work
+			 	当前目录下创建2个文件net和work
+			 touch "net work"
+			 	当前目录下创建net work文件(带有特殊符号)
+			 touch /opt/test
+			 	在/opt目录下创建test文件
+		2>重定向
+			补充:echo(打印)
+				echo simida
+			>   覆盖
+				 echo heygor > zhenshuai
+				 覆盖heygor到zhenshuai文件中，如果没有该文件，自动创建
+			>>  追加
+				echo zhenshuai >> heygor
+				追加zhenshuai到heygor文件中，如果没有该文件，自动创建
+			1>  正确信息打印到文件中
+			2>  错误信息打印到文件中
+			&>  所有信息打印到文件中
+		3>vi编辑器
+	d2.复制
+		 cp /root/install.log .
+		 	复制/root下install.log 文件到当前目录下
+		 cp log2 log3
+		 	复制log2为log3
+	d3.剪切、移动
+		mv install.log 1
+			重命名install.log为1(1目录不存在)
+		mv 1 /root
+			剪切1到/root目录下(/root目录存在)
+	d4.查看
+		cat  不分页显示文件内容
+		less 分页显示文件内容，可以向上、向下翻页
+		more 分页显示文件内容，向下翻页
+		head 前几行
+		tail 后几行
+		vi   
+	d5.删除
+		rm   删除前提示
+			rm 1
+		rm -f强制删除无提示
+			rm -f 1
+		rm -rf *
+			删除当前目录下所有文件
+	d6.编辑(vi编辑器)
+		vi/vim 文件名
+		1>vi编辑器的3种模式
+			命令
+			编辑
+			末行
+		2>命令模式
+			跳转
+				G    光标跳转到内容最后一行行首
+				gg   光标跳转到内容第一行行首
+				30gg 光标跳转到内容第30行行首
+				^	 光标跳转到本行行首
+				$    光标跳转到本行行尾
+			复制
+				yy	 复制当前行内容
+				10yy 复制10行内容
+			粘贴
+				p
+			剪切/删除
+				dd    剪切/删除当前行内容
+			搜索
+				?386  搜索全文中所有386关键字
+				/386  搜索全文中所有386关键字
+			命令模式进入到编辑模式的方法
+				i     光标所在位置进行插入，进入到编辑模式
+				O  o
+				S  s
+				A  a
+		3>编辑模式
+			自己动手 丰衣足食
+			无法直接进入到末行模式，按ecs返回命令模式
+		4.末行模式
+			命令模式:
+			:set nu    显示行号
+			:set nonu  取消显示行号
+			:w         保存文件
+			:wq！      强制保存退出
+			替换
+			:1,$s/a/b/ 全文搜索a替换为b，只替换每行第一个
+			:20s/a/c/g 20行搜索a替换为c，全部替换
+e.目录
+	创建
+		mkdir a
+			当前目录下创建a目录
+		mkdir b c
+			当前目录下创建2个目录b和c
+		mkdir d\ e
+			当前目录下创建d e目录
+		mkdir f/g/h -p
+			创建级联目录 f/g/h
+		tree
+			树状显示目录结构	
+	复制（加-r）
+		 cp -r f a 
+		 	复制f目录到a目录中
+	移动
+		mv c d\ e/ f f,e/
+			复制xxxx到f，e目录中
+	删除
+		rm -r b
+			有提示删除b目录
+		rm -rf f\,e
+			强制删除f\,e目录
+/opt
++----A
+|    +--A1
+|    +--A2
+|
+|----B
+	 +--C
+	 +--D
+mkdir A/A1 A/A2 B/C B/D -p
+mkdir A/A{1,2} B/{C,D} -p
+
+f.网络配置补充
+	f1.配置文件所在位置
+		/etc/sysconfig/network-scripts
+	f2.修改网卡信息
+		vim /etc/sysconfig/network-scripts/ifcfg-eth0
+		DEVICE=eth0                     #设备名称
+		BOOTPROTO=static                #启动协议(dhcp:动态分配 static:静态设置)
+		ONBOOT=yes 						#网卡是否随开机启动而启动
+		HWADDR=00:0c:29:8d:15:71  		#网卡MAC地址
+		NETMASK=255.255.254.0           #子网掩码
+		IPADDR=192.168.7.88             #IP地址
+		TYPE=Ethernet	            	#上网类型
+	f3.重启网络
+		service network restart
+
+g.部署一个主机常用操作
+	g1.安装操作系统
+	g2.设置网卡信息
+	f3.设置主机名
+		永久修改主机名
+			vim /etc/sysconfig/network
+			NETWORKING=yes
+			NETWORKING_IPV6=no
+			HOSTNAME=heygor.com.cn
+			设置完毕后需要重启主机
+		临时修改主机名
+			hostname gaga.com.cn
+			重启主机后失效
+	f4.绑定主机名
+		vim /etc/hosts
+		127.0.0.1               localhost.localdomain localhost
+		::1                     localhost6.localdomain6 localhost6
+		192.168.7.88			heygor.com.cn  heygor
+	f5.关闭防火墙
+		防火墙：防止外界用户对主机的非法操作
+		service iptables stop
+			service iptables status
+			service iptables start
+	f6.关闭selinux
+		selinux：防止本地误操作
+		cat /etc/selinux/config
+		SELINUX=disabled
+	f7.设置启动模式(运行级别)
+		0：关机
+		3：字符模式
+		5：图形模式
+		6：重启
+		vim /etc/inittab
+	f8.设置开机启动
+		chkconfig --list
+			查看开机启动的服务列表
+		chkconfig  sendmail off
+		chkconfig  sendmail on
+
+
+
+

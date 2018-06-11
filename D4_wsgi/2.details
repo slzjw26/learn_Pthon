@@ -1,0 +1,141 @@
+# section: WSGI介绍
+
+WSGI不是某个服务器，不是某个模块，不是某个框架，不是某个API，或者任何的软件；WSGI仅仅是一种规范，用于规定服务器和应用程序之间通讯的接口。任何应用程序/框架/工具，只要是按照WSGI的规范开发的，都可以运行在任何按照WSGI规范开发的服务器上。
+
+多个WSGI程序之间可以堆叠，在堆中，一个程序对上面的程序来说是服务器，对下面的程序（或网页服务器）来说是程序，故处于堆的中间的程序需要同时实现应用程序和服务器两边的接口，处于中间的应用程序也叫“中间件” (middleware)
+
+一个WSGI服务器，它所做的仅仅是接收来自网页客户端的请求，把请求转发给WSGI应用程序，然后把WSGI应用程序的回应转发回给网页客户端，除此之外，WSGI服务器什么也不做。所有对客户端请求的处理细节都必须由应用程序或中间件来提供。
+
+Python 2.5及之后的版本包含了一个WSGI服务器，可以作为测试用。不应在生产环境中使用这个服务器，在生产环境中应该使用类似Apach+mod_wsgi这样的服务器。
+
+
+# section: 应用程序接口
+
+WSGI应用程序的接口以可调用对象的形式来实现，函数、方法、类、或者实现了 __call__ 方法的类的实例，这些可调用对象必须符合以下要求：
+
+    1. 接受两个位置参数
+        1. 一个dict对象，包含了类似CGI形式的变量
+        2. 一个回调函数，被应用程序用来发送http状态和头给服务器
+    2. 返回一个回应体(response body)，这个回应体是包含了字节串的可迭代对象
+
+示范应用程序代码
+
+def application(env, start_response):
+    response_data = 'Request method: %s' % env['REQUEST_METHOD']
+    response_data = response_data.encode()
+    status = '200 OK'
+    response_headers = [
+        ('Content-Type', 'text/plain'),
+        ('Content-Length', str(len(response_data))),
+    ]
+    start_response(status, response_headers)
+    response_body = [response_data]
+    return response_body
+
+应用程序函数application需要服务器实例才能运行。
+
+
+# section: 环境字典
+
+WSGI服务器接收到客户端的每一个请求后，都会生成一个存放环境的字典，然后将这个字典传给应用程序。
+
+示范代码
+    承接上面的application代码，以下代码运行一个http服务器，监听本地接口的8000端口
+
+    from wsgiref.simple_server import make_server
+    httpd = make_server('localhost', 8000, application)
+    httpd.serve_forever()
+
+
+# section: 回应体
+
+应用程序函数所返回的对象，将会被服务器当作可迭代对象来操作，因此，即使返回的字节串只有一个，也要用列表将其包装起来（长度为一的列表），以免服务器对字节串本身做迭代操作，导致出错；在Python2中，这种情况下不会出错，但是服务器每次只发送一个字节，效率很低。
+
+如果需要回复多个字节串，则Content-Length是多个字节串的总和。
+
+范例
+    response_body = [b'aaa', b'bbb', b'ccc']
+    length = sum(len(x) for x in response_body)
+    response_headers = [
+        ('Content-Type', 'text/plain'),
+        ('Content-Length', str(length)),
+    ]
+    return response_body
+
+
+# section: 处理GET请求
+
+GET方法的相关数据
+    客户端请求的类型存放在环境字典中，key的名字是REQUEST_METHOD
+    提交的变量存放在名为QUERY_STRING的环境中
+    QUERY_STRING的值是形如age=30&hobbies=software&hobbies=tunning的字符串
+
+解析QUERY_STRING
+    对QUERY_STRING字符串做切分后就可以抽出其中的请求数据
+    如果通过这样的代码手动做解析
+        dict(x.split('=') for x in text.split('&'))
+    将会得到以下数据，其中hobbies数据丢失了一部分
+        {'age': '30', 'hobbies': 'tunning'}
+    常见的做法不是手动操作，而是使用 urllib.parse.parse_qs 函数来解析
+    parse_qs函数生成一个字典，每一个值都是一个列表，如下：
+        {'age': ['30'], 'hobbies': ['software', 'tunning']}
+
+
+# section: 处理POST请求
+
+POST方法的相关数据
+    当方法为POST时，提交的变量将会通过http的请求体来传输
+    http请求体是一个类似文件的对象，WSGI服务器把对此对象\
+    的引用放到环境字典中，key是wsgi.input
+    从wsgi.input中读出来的数据是字节串，可以根据需要解码
+    wsgi.input中的数据的长度存放在CONTENT_LENGTH中
+    CONTENT_LENGTH可能为空值甚至不存在，处理时需注意
+
+通过POST上传文件
+    上传用的表单中应包含 enctype="multipart/form-data"
+    使用 cgi.FieldStorage 来处理上传的文件
+    表单中file类型的input元素的名字，会成为FieldStorage的key
+    可以同时上传多个文件，每个文件对应一个FieldStorage的key
+    从FieldStorage中可以获得文件在客户端的名字
+    为了避免上传大文件时对内存的消耗，可以对文件对象按块读取
+
+
+# section: URL调度
+
+URL调度原理
+    在WSGI的服务器/应用程序架构中，服务器通过应用程序的接口函数来调用应用程序
+    接口函数就是应用程序的入口函数，从这个入口函数开始，就可以做URL调度
+    根据http请求中的URL路径，找出预设的响应函数，并调用该函数，传递相应的数据
+    在URL对应的响应函数中，可以做各样的操作
+        校验用户身份，登录用户
+        读取文件，存储文件
+        操作数据库
+        读取网页模板，渲染返回的网页内容
+        返回数据给调用函数
+
+URL调度的实现
+    参考模块url.py的源码
+    类route作为带参数的装饰器应用于响应函数上
+    传给route类的第一个参数'url'是url的正则表达式
+    参数'url'中可以用正则表达式标记将要从url中抽取的参数，分为两类
+        一类是不命名的参数
+        一类是命名的参数，用了命名参数后，不命名参数将被忽略
+    传给route类的第二个参数'extra_kargs'是可选参数，将作为响应函数的额外参数
+    额外参数'extra_kargs'中的值将会覆盖从url中获得的同名参数
+    可以给一个响应函数加上多个装饰器，建立多个从url到函数的映射
+
+URL调度配置范例
+    @route('/say/(?P<name>[a-z]+)/(?P<id>[0-9]+)/')
+    @route('/mur/(?P<name>[a-z]+)/(?P<id>[0-9]+)/', {'id': 1234})
+    @route('/cry/(?P<name>[a-z]+)/(?P<id>[0-9]+)/', {'gender': 'female'})
+    def hello(env, name, id, gender='male'):
+        msg = '<%s: id=%s, gender=%s>' % (name, id, gender)
+        return HttpResponse(msg)
+
+辅助测试命令
+    运行uwsgi，启用自动重载模式
+        uwsgi --http :8000 --py-autoreload 1 --file url_routing.py
+    可以在浏览器中分别测试以下url
+        http://localhost:8000/say/alice/101/    <-- gender: male
+        http://localhost:8000/cry/alice/101/    <-- gender: female
+        http://localhost:8000/mur/alice/101/    <-- id: 1234

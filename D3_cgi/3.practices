@@ -1,0 +1,328 @@
+关闭防火墙和SELinux
+
+关闭防火墙：
+
+    iptables -F
+    iptables -t nat -F
+    service iptables save
+
+
+关闭SELinux
+
+    1. 修改配置文件
+    sed -i -r '/^SELINUX=.*/s/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+
+    2. 重启系统
+    reboot
+
+    3. 校验，以下命令应能看到 Disabled 字样
+    getenforce
+
+
+
+一、安装apache网页服务器，并用shell写一个CGI程序
+
+1. 关闭防火墙和SELinux，如果已经关闭了，可以忽略这步
+    iptables -F
+    setenforce 0
+1. 安装apache服务器
+    yum install httpd
+2. 运行服务器
+    service httpd start
+3. 写CGI程序
+    1. 写程序 （头 -- 空行 -- 正文）
+    2. 添加可执行权限
+    3. 尝试在终端执行
+
+    范例代码：
+
+    #!/bin/bash
+    echo "Content-Type: text/plain"
+    echo
+    echo "hello cgi world."
+
+4. 把CGI程序放到网页服务器的适当位置，并加上执行权限
+    cp hello.sh /var/www/cgi-bin/hello.sh
+    chmod a+x /var/www/cgi-bin/hello.sh
+5. 访问
+    http://hostname/cgi-bin/script_name
+
+
+
+二、写一个程序，实现服务器监视的功能
+
+要求：
+    1. 被控机运行网页服务器，通过CGI的方式提供信息给调阅者
+    2. 提供以下监控项
+        http://example.com/cgi-bin/cpu  <-- 返回被控机的cpu负载信息 (uptime)
+        http://example.com/cgi-bin/ram  <-- 返回被控机的内存使用状况信息 (free)
+        http://example.com/cgi-bin/hd   <-- 返回服务器的硬盘使用状况信息 (df)
+要点：
+    响应头中指明文件类型 Content-Type: text/plain
+                         Content-Type: text/html
+
+
+
+三、写一个程序，承接练习二，把CPU，内存，硬盘三种信息的提供合并到一个程序文件
+
+要求：
+    1. CPU url: http://example.com/cgi-bin/monitor?c=cpu
+    2. RAM url: http://example.com/cgi-bin/monitor?c=ram
+    3. HD url: http://example.com/cgi-bin/monitor?c=hd
+要点：
+    通过环境变量 QUERY_STRING 来获取查询类别信息
+
+如果是在centos上运行python程序，可以使用以下方法安装python3.
+
+1. 在centos上用root安装Miniconda3
+    1. 获取Miniconda3的安装文件 Miniconda3-latest-Linux-x86_64.sh
+    2. 以root的身份运行命令：bash Miniconda3-latest-Linux-x86_64.sh
+       安装路径设置为 /miniconda3
+
+2. 创建一个python3的软链接
+
+    ln -sv /miniconda3/bin/python3 /usr/bin/
+
+3. 写python程序的时候，首行这样写：
+
+    #!/usr/bin/python3
+
+
+
+四、写一个程序，承接练习三，输出html格式的文档，把相关信息的类型(CPU, RAM, HD)名字加粗
+
+要点：
+    设置响应头 Content-Type: text/html
+    加粗: h1, h2, h3, strong, b
+
+
+
+
+
+五、写一个程序，获取客户端用POST方法提交的数据，并原封不动地返回给客户端
+
+要点：
+    POST数据在标准输入中
+
+1. 书写cgi程序，示范代码：
+
+    #!/usr/bin/python3
+    import sys
+    print('Content-Type: text/plain\n\n', end='')
+    while True:
+        post_data = sys.stdin.read(1024)
+        if not post_data:
+            break
+        sys.stdout.write(post_data)
+
+2. 客户端的测试命令
+
+    import requests
+    url = 'http://3.3.3.251/cgi-bin/post.py'
+    data = dict(name='John', age=18)
+    r = requests.post(url, data=data)
+    print(r.text)
+
+
+
+六、用python写一个cgi程序，功能如下：
+
+    1. 查询用户 (get)
+    2. 创建用户 (post)
+    3. 修改用户 (post)
+    4. 删除用户 (post)
+
+要点：
+
+    1. 通过变量 REQUEST_METHOD 来判断是get还是post
+    2. 通过POST数据中的kind字段来判断是创建还是修改还是删除
+    3. 通过subprocess.getoutput, 或者os.system 来运行shell命令
+    4. 相关命令如下：
+        查用户：grep ^root /etc/passwd
+        加用户：useradd user-name
+        改用户：usermod user-name
+        删用户：userdel user-name
+    5. 添加/修改/删除用户这样的操作是需要管理员root的权限的，但是网页服务器
+       进程的用户是apche用户，而不是root用；在实验环境中，可以通过sudo授予权限，
+       在生产环境中应该使用更妥当的方式。
+
+        sudo配置参考：
+
+        apache ALL=(ALL) NOPASSWD: /usr/sbin/useradd, /usr/sbin/usermod, /usr/sbin/userdel
+
+        参考命令：visudo
+
+
+
+七、写一个程序，接收客户端上传的文件
+
+要点：
+
+    1. 首先要了解客户端上传上来的数据的结构
+        第一行/第二行/第三行/末行/倒数第二行/其它行
+    2. 如何处理上传大文件的情况？
+        方法：每次读一小块
+    3. 如果不按行读取，如何做到去除最后一行和倒数第二行的最后两个字节？
+        方法：保持最近两次读取的结果，遇到读取结束后，合并两者，再做处理
+
+
+
+八、操练cookie的使用
+
+1. 在服务器端设置一个cookie，只提供名字和值
+2. 在服务器端设置一个cookie，设置有效期是1小时
+3. 在服务器端设置一个cookie，设置有效期域是exmaple.com
+4. 在服务器端设置一个cookie，设置有效期路径是/cgi-bin
+5. 在服务器端设置一个cookie，设置secure和httponly标记
+
+设置指令：
+
+Set-Cookie: key=val; expires=$(date -R); domain=.gnu.org; path=/cgi-bin; httponly; secure;
+
+参考代码：
+
+    import pytz
+    from datetime import datetime, timedelta
+    def calc_expire(tz='Asia/Chongqing', **kargs):
+        now = datetime.now()
+        tz = pytz.timezone(tz)
+        now = tz.localize(now)
+        delta = timedelta(**kargs)
+        now = now + delta
+        return now.strftime('%a, %d %b %Y %H:%M:%S %z')
+    expire = calc_expire(days=1)
+    print('Content-Type: text/plain')
+    print('Set-Cookie: age=18; expires=%s' % expire)
+    print()
+    print('hello cookie')
+
+测试cookie过期时间的方法：
+
+    1. 在cgi程序中设置一个有效期为20秒的cookie
+    2. 使用firefox做测试
+    3. 对firefox的调试工作做以下设置：network -> 勾选Persis Logs
+    4. 在浏览器中清空所有的cookie
+    5. 在浏览器中打开网页（第一次请求）
+    6. 20秒之内刷新网页（第二次请求）
+    7. 第二次请求后，等待超过20秒后，再次刷新（第三次请求）
+    8. 在调试器中查看三次请求的头信息中的Request和Response中的cookie信息
+
+测试cookie的domain的方法：
+
+    1. 在cgi 程序中设置两个cookie，
+       一个设置其domain的值为 .example.com，
+       另外一个不设置domain，
+       不设置过期时间
+    2. 在客户端的文件 /etc/hosts 中添加以下两行记录（假设web服务器的ip是3.3.3.251）：
+        3.3.3.251  web1.example.com
+        3.3.3.251  web2.example.com
+    3. 在客户端的浏览器中用两个独立的标签打开这两个地址
+        http://web1.example.com/cgi-bin/cookie.py
+        http://web2.example.com/cgi-bin/cookie.py
+    4. 清空浏览器的cookie
+    5. 对firefox的调试工作做以下设置：network -> 勾选Persis Logs
+    6. 先在第一个标签中刷新两次，然后在第二个标签中也刷新两次
+    7. 在调试器中查看两个网页两次请求的头信息中的Request和Response中的cookie信息，
+       在第二个标签中应能看到，首次刷新的Request中有一个cookie信息，因为共享了第一个标签的cookie
+
+测试cookie的path的方法：
+
+    1. 在cgi 程序cookie.py 中设置两个cookie，
+       一个设置其path的值为 /cgi-bin/
+       另一个设置其path的值为 /cgi-bin/cookie.py
+       不设置过期时间和domain
+       把cookie.py 复制一份，命名为notcookie.py
+    2. 在客户端的浏览器中用两个独立的标签打开cookie.py和notcookie.py
+        http://<hostname>/cgi-bin/cookie.py
+        http://<hostname>/cgi-bin/notcookie.py
+    3. 清空浏览器的cookie
+    4. 对firefox的调试工作做以下设置：network -> 勾选Persis Logs
+    5. 先在第一个标签中刷新两次，然后在第二个标签中也刷新两次
+    6. 在调试器中查看两个网页两次请求的头信息中的Request和Response中的cookie信息，
+       在第二个标签中应能看到，首次刷新的Request中有一个cookie信息，因为共享了第一个标签的cookie；
+       第二次刷新也只有一个cookie信息，因为第二个cookie的path设置的是
+       /cgi-bin/cookie.py而不是/cgi-bin/notcookie.py
+
+测试cookie的secure的方法：
+
+    1. 配置apache的https
+        yum install mod_ssl
+        service httpd restart
+    2. 在cgi 程序cookie.py 中设置两个cookie，
+       一个使用secure标记
+       另一个不使用
+       不设置其它属性
+    3. 在客户端的浏览器中用两个独立的标签打开以下地址，一个是https，另一个是http
+        https://<hostname>/cgi-bin/cookie.py
+        http://<hostname>/cgi-bin/cookie.py
+        提示：如果浏览器提示链接不安全，就接受证书
+    4. 清空浏览器的cookie
+    5. 对firefox的调试工作做以下设置：network -> 勾选Persis Logs
+    6. 在第一个标签中刷新两次，在第二个标签中刷新一次
+    7. 在调试器的network标签中查看两个网页两次请求的头信息中的Request和Response中的cookie信息，
+       应能看到，第一个标签的第二次请求的Request中有两个cookie，第二个标签的Request只有一个。
+
+测试cookie的httponly的方法：
+
+    1. 在cgi 程序cookie.py 中设置两个cookie，
+       一个使用httponly标记
+       另一个不使用
+       不设置其它属性
+    2. 在客户端的浏览器中打开网页
+        http://<hostname>/cgi-bin/cookie.py
+    3. 清空浏览器的cookie
+    4. 对firefox的调试工作做以下设置：network -> 勾选Persis Logs
+    5. 做两次刷新操作
+    6. 在调试器的network标签中查看两个网页两次请求的头信息中的Request和Response中的cookie信息，
+       第二次请求应能向服务器发送两个cookie
+    7. 在调试器的console标签中，运行命令 document.cookie，看不到设置了httponly标记的cookie
+
+cookie安全测试
+
+    1. 在第一台电脑上登录，登录成功后通过浏览器的调试工具从cookie中获取sessionid，
+       这里假设获取到的seesionid是 ufmvayaomy9km6e32qynkewznn7bu1hk
+
+    2. 在第二台电脑上用python运行以下命令，应能看到需要登录才能看到的内容
+
+        r = requests.get('http://3.3.3.254:8000/admin/',
+                         cookies={'sessionid': 'ufmvayaomy9km6e32qynkewznn7bu1hk'})
+        'Groups' in r.text
+
+
+
+九、承接练习三，按以下要求写一个程序
+
+1. 实现用户登录功能，登录有效期为24小时
+2. 用户登录后可以查看系统在线用户，没登录用户可以看CPU/RAM/HD使用状况
+3. 登录成功后应该自动重定向到查看系统信息的页面 (Status 302, Location)
+4. 用户每次查看系统信息时更新session的时间戳，重新计算有效时间
+5. 如果session已经过期，就删除session数据
+
+要点：
+    1. 把成功登录的用户的相关信息存放到服务器的文件系统中，一个session对应一个文件
+    2. 服务器创建一个有效期是24小时的cookie，存放session id
+    3. 服务端在session数据中存放时间戳信息，防止客户端篡改cookie的时间
+    4. 登录成功后设置状态码302，并通过Location提供一个新的URL做重定向
+
+参考：
+
+    echo "Set-Cookie: gender=female; domain=.centosc.com; httponly"
+    echo "Status: 302 Found"
+    echo "Location: /cgi-bin/monitor"
+
+
+
+
+在虚拟机中安装Centos的要求
+
+1. 硬盘50GB
+2. 内存不小于1GB
+3. 使用全英文: English, United States
+4. 硬盘分区使用最上面的选项，就是让安装程序自动使用所有的硬盘空间
+5. 电脑名字可以使用默认名字，或者随意设置一个名字
+6. 时区选择Asia/Shanghai
+7. root用户的密码至少8位，因为是实验室，可以设置12345678这样的简单密码
+8. 其它的选项就选择默认值（一路点击next）
+9. 安装完毕，最好马上创建一个虚拟机快照
+10. 配置完毕后，也创建一个快照
+11. 在使用过程中，有必要就随时创建快照

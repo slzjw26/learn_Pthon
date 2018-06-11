@@ -1,0 +1,283 @@
+一、用wsgi写一个hello world程序
+
+参考代码：
+
+from wsgiref.simple_server import make_server
+
+
+def app(env, callback):
+    callback('200 OK', [('Content-Type', 'text/plain')])
+    return [b'hello wsgi world.']
+
+
+if __name__ == '__main__':
+    host = 'localhost'
+    port = 8000
+    server = make_server(host, port, app)
+    server.serve_forever()
+
+
+
+二、按要求写一个wsgi应用程序
+
+1. 提供一个表单，表单包含以下元素
+    1. 一个text类型的input，用来保存年龄
+    2. 两个checkbox类型的input，用来勾选爱好，爱好可以写多个
+2. 表单通过get方法提交
+3. 使用 urllib.parse.parse_qs 对QUERY_STRING做解析
+4. 使用 html.escape 对客户端传过来的值做转义
+5. 用一个长的字符串构建网页代码的模板，然后用相应的值对模板做渲染
+6. 客户端提交表单后，应用程序应该把客户端所提交的内容展示在网页上
+
+参考代码路径：support/get_request.py
+
+
+
+三、改写之前用python实现的monitor.py 程序，在入口函数application中，根据url执行不同的响应函数
+
+要点：
+
+    1. 定义独立的响应函数
+    2. 给url与响应函数做映射
+    3. 在application中根据url获取响应函数
+    4. 执行响应函数返回结果
+
+
+
+四、按要求写一个wsgi应用程序
+
+    1. 解析客户端用post方式传上来的数据，并做转义
+    2. 把处理结果以json的格式返回给客户端
+
+参考代码：support/post_request.py
+
+
+
+五、用wsgi开发一个简易文件共享服务器（周日实验题）
+
+    1. 程序运行环境：Linux + python3 + wsgi
+    2. 在服务器上以文件的sha1检验码作为文件名字（存好之后改名）
+    3. 在文件真实的名字和文件在服务器上的名字之间建立对应关系
+    4. 通过一个简单的查询命令，可以列出服务器上所有的文件的以下信息：
+        1. 真实名字
+        2. 大小
+        3. 上传日期
+        4. 上传者
+    5. 必须登录才能查看/下载/上传
+    6. 提供文件下载服务
+
+
+
+六、实现url调度
+
+要求：
+    1. 当客户端访问路径 /time/iso/ 时，以 2018-04-21 16:48:17 这样的格式显示当前时间
+    2. 当客户端访问路径 /time/rfc2822/ 时，以 Sat, 21 Apr 2018 16:48:06 这样的格式显示当前时间
+    3. 在url绑定时设置url的额外参数，使得：
+       当客户端访问路径 /time2/iso/ 时，显示iso格式的输出
+       当客户端访问路径 /time2/rfc2822/ 时，也显示iso格式的输出
+    4. 修改搜索响应函数的逻辑，使得当url中有关键字参数时，位置参数被忽略，
+       路径 /time3/rfc2822/utc/ 中的rfc2822设计为位置参数，utc设计为关键字参数，
+       这样：
+            访问 /time3/rfc2822/utc/ 时，显示的不是rfc2822格式，显示utc的值
+            访问 /time3/rfc2822/ 时，显示的是rfc2822格式
+
+要点：
+    1. 在application中找出url对应的响应函数
+    2. 运行响应函数，把从url中获取到的参数传进去
+    3. 定义一个类，用来构建url和响应函数之间的映射关系，
+       此类提供一个简易方法，用于匹配url与url模式
+    4. 用一个全局变量来存放url和相应函数之间的关系
+
+
+完整参考代码文件：support/url_routing2.py
+
+def showtime(env, format='iso', zone=''):
+    now = datetime.now()
+    if format == 'rfc2822':
+        fmt = '%a, %d %b %Y %H:%M:%S %z'
+    else:
+        fmt = '%F %T'
+
+    time_text = now.strftime('current time: ' + fmt)
+    time_text = time_text + '\nZone: %s' % zone
+    time_text = time_text.encode()
+
+    status = '200 OK'
+    headers = [('Content-Type', 'text/plain'),
+               ('Content-Length', str(len(time_text)))]
+    return status, headers, time_text
+
+
+def find_worker(path):
+    for url in url_patterns:
+        m = url.match(path)
+        if m:
+            args = ()
+            kwargs = m.groupdict()
+            kwargs = {k: v for k, v in kwargs.items() if v}
+            if kwargs:
+                kwargs.update(url.kwargs)
+            else:
+                args = m.groups()
+            return url.func, args, kwargs
+
+
+def application(env, start_response):
+    url = env['PATH_INFO']
+    worker = find_worker(url)      # 找出响应函数
+
+    if not worker:
+        status = '404 NOT FOUND'
+        response_headers = [
+            ('Content-Type', 'text/plain'),
+            ('Content-Length', '0'),
+        ]
+        response_body = b''
+    else:
+        func, args, kwargs = worker
+        status, response_headers, response_body = func(env, *args, **kwargs)
+    start_response(status, response_headers)
+    return [response_body]
+
+
+class url:
+
+    def __init__(self, pattern, func, kwargs={}):
+        self.pattern = pattern
+        self.func = func
+        self.kwargs = kwargs
+
+    def match(self, path):
+        return re.match(self.pattern, path)
+
+
+# url 与响应函数之间的映射关系
+url_patterns = [
+    url(r'/time/(?P<format>[a-z0-9]+)/$', showtime),
+    url(r'/time2/(?P<format>[a-z0-9]+)/$', showtime, kwargs={'format': 'iso'}),
+    url(r'/time3/([a-z0-9]+)/(?:(?P<zone>[a-z]+)/)?$', showtime),
+]
+
+
+------------------------------------------------------
+
+
+二、用类来实现带参数的装饰器，完成以下任务
+
+有函数如下：
+
+    def worker(env):
+        print('number of members: %s' % len(env))
+
+通过一个带参数的装饰器，使得下面两种代码输出两种不同的结果：
+
+    这种用法：
+
+        @dec(123)
+        def worker(env):
+            print('number of members: %s' % len(env))
+
+    输出：
+        arg: 123
+        number of members: 10
+
+    这种用法：
+
+        @dec(789)
+        def worker(env):
+            print('number of members: %s' % len(env))
+
+    输出：
+        arg: 789
+        number of members: 10
+
+
+
+三、实现一个基本的url调度机制
+
+要求：
+
+    1. 支持通过正则表达式表示url
+    2. 可以在url中包含参数
+    3. 可以通过带参数的装饰器绑定url和处理函数，或者使用集中式的设置方法
+    4. 可以在绑定时为url处理函数提供额外的参数，额外参数优先级比url中的参数高
+    5. 如果url中有关键字参数，则位置参数被忽略
+    6. 支持多个url表达式指向同一个处理函数
+
+程序的功能模块：
+
+    1. wsgi服务器模块
+    2. 应用程序模块
+        1. 根据url找到匹配的响应函数
+        2. 解析出url中的参数
+        3. 响应函数返回一个Response对象，Response对象包含以下属性：
+            1. http状态码
+            2. http头
+            3. http正文
+    3. url对象用于建立url与响应函数之间的关系，url对象的属性/方法
+        1. 网址
+        2. 响应函数
+        3. 额外参数
+        4. match方法用于匹配指定的网址
+            
+
+
+
+四、实现一个只包含save 方法的ORM
+
+要求：
+    通过save方法插入数据到MySQL数据库中
+
+
+参考代码文件：support/orm2.py
+
+创建数据表的参考代码：
+
+CREATE TABLE `student` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(16) DEFAULT NULL,
+  `gender` varchar(16) DEFAULT NULL,
+  `age` int(11) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) DEFAULT CHARSET=utf8
+
+CREATE TABLE `teacher` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(16) DEFAULT NULL,
+  `gender` varchar(16) DEFAULT NULL,
+  `age` int(11) DEFAULT '0',
+  `subject` varchar(16) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) DEFAULT CHARSET=utf8
+
+
+
+五、实现一个ORM (Object-relational mapper)
+
+功能：
+
+    1. 把对数据库的增删改查封装成类的方法，方便调用
+
+        save
+        delete
+        search
+
+    2. 支持以下使用方法
+
+        student = Student(name='Alice', age=18)
+        student.save()
+        student.age += 1
+        student.save()
+        Student.search()                <-- 列出所有的Student记录
+        Student.search(name='Alice')    <-- 列出名字是Alice的里据
+        Student.search(name='Alice', age=18)    <-- 多条件查询
+        student.delete()                <-- 删除数据库中的记录
+
+    3. 支持这样的模型定义方法
+
+        class Student(Model):
+            name = CharField(max_length=16)
+            age = IntegerField(default=0)
+
+    3. 支持对模型中的字段的值做有效性校验，遇到无效值时，不应操作数据库
